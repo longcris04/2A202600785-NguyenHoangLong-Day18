@@ -7,6 +7,14 @@ load_dotenv()
 
 # --- API Keys ---
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "google/gemini-2.5-flash-lite")
+
+# Use OpenRouter if no OpenAI key
+_effective_api_key = OPENAI_API_KEY or OPENROUTER_API_KEY
+_effective_base_url = "" if OPENAI_API_KEY else OPENROUTER_BASE_URL
+_effective_model = "gpt-4o-mini" if OPENAI_API_KEY else OPENROUTER_MODEL
 
 # --- Qdrant ---
 QDRANT_HOST = "localhost"

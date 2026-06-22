@@ -9,7 +9,14 @@ Usage:
 
 import json
 import os
+import sys
 import time
+
+# Force UTF-8 output on Windows (default cp1252 can't encode emoji)
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 
 def main():
@@ -34,9 +41,10 @@ def main():
     prod_results = evaluate_pipeline(search, reranker)
 
     # Move reports to reports/
+    import shutil
     for f in ["ragas_report.json", "naive_baseline_report.json"]:
         if os.path.exists(f):
-            os.rename(f, f"reports/{f}")
+            shutil.move(f, f"reports/{f}")
 
     # Step 3: Comparison
     print("\n📌 STEP 3: Comparison")

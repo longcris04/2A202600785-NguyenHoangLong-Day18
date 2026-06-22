@@ -34,11 +34,14 @@ def main():
     test_set = load_test_set()
     questions, answers, all_contexts, ground_truths = [], [], [], []
 
-    from config import OPENAI_API_KEY
-    llm_client = None
-    if OPENAI_API_KEY:
-        from openai import OpenAI
-        llm_client = OpenAI()
+    from config import OPENAI_API_KEY, OPENROUTER_API_KEY, OPENROUTER_BASE_URL, OPENROUTER_MODEL
+    from openai import OpenAI
+    api_key = OPENAI_API_KEY or OPENROUTER_API_KEY
+    llm_client = OpenAI(
+        api_key=api_key,
+        base_url=OPENROUTER_BASE_URL if not OPENAI_API_KEY else None,
+    ) if api_key else None
+    llm_model = "gpt-4o-mini" if OPENAI_API_KEY else OPENROUTER_MODEL
 
     for i, item in enumerate(test_set):
         results = search.search(item["question"], top_k=3, collection=NAIVE_COLLECTION)
@@ -47,15 +50,15 @@ def main():
         if llm_client and contexts:
             try:
                 context_str = "\n\n".join(contexts)
-                resp = llm_client.chat.completions.create(model="gpt-4o-mini", messages=[
-                    {"role": "system", "content": "Trả lời CHỈ dựa trên context. Nếu không có → nói 'Không tìm thấy.'"},
-                    {"role": "user", "content": f"Context:\n{context_str}\n\nCâu hỏi: {item['question']}"},
+                resp = llm_client.chat.completions.create(model=llm_model, messages=[
+                    {"role": "system", "content": "Tra loi CHI dua tren context. Neu khong co → noi 'Khong tim thay.'"},
+                    {"role": "user", "content": f"Context:\n{context_str}\n\nCau hoi: {item['question']}"},
                 ])
                 answer = resp.choices[0].message.content
             except Exception:
                 answer = contexts[0]
         else:
-            answer = contexts[0] if contexts else "Không tìm thấy."
+            answer = contexts[0] if contexts else "Khong tim thay."
 
         answers.append(answer)
         questions.append(item["question"])

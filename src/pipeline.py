@@ -64,22 +64,27 @@ def run_query(query: str, search: HybridSearch, reranker: CrossEncoderReranker) 
     reranked = reranker.rerank(query, docs, top_k=RERANK_TOP_K)
     contexts = [r.text for r in reranked] if reranked else [r.text for r in results[:3]]
 
-    from config import OPENAI_API_KEY
-    if OPENAI_API_KEY and contexts:
+    from config import OPENAI_API_KEY, OPENROUTER_API_KEY, OPENROUTER_BASE_URL, OPENROUTER_MODEL
+    api_key = OPENAI_API_KEY or OPENROUTER_API_KEY
+    if api_key and contexts:
         try:
             from openai import OpenAI
-            client = OpenAI()
+            client = OpenAI(
+                api_key=api_key,
+                base_url=OPENROUTER_BASE_URL if not OPENAI_API_KEY else None,
+            )
+            model = "gpt-4o-mini" if OPENAI_API_KEY else OPENROUTER_MODEL
             context_str = "\n\n".join(contexts)
-            resp = client.chat.completions.create(model="gpt-4o-mini", messages=[
-                {"role": "system", "content": "Trả lời CHỈ dựa trên context. Nếu không có → nói 'Không tìm thấy.'"},
-                {"role": "user", "content": f"Context:\n{context_str}\n\nCâu hỏi: {query}"},
+            resp = client.chat.completions.create(model=model, messages=[
+                {"role": "system", "content": "Tra loi CHI dua tren context. Neu khong co thong tin → noi 'Khong tim thay.'"},
+                {"role": "user", "content": f"Context:\n{context_str}\n\nCau hoi: {query}"},
             ])
             answer = resp.choices[0].message.content
         except Exception as e:
-            print(f"  ⚠️  LLM generation failed: {e}", flush=True)
+            print(f"  LLM generation failed: {e}", flush=True)
             answer = contexts[0]
     else:
-        answer = contexts[0] if contexts else "Không tìm thấy thông tin."
+        answer = contexts[0] if contexts else "Khong tim thay thong tin."
     return answer, contexts
 
 
